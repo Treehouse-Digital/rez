@@ -507,15 +507,17 @@ def _get_distribution_files_mapping(distribution: InstalledDistribution, targetd
             rel_dest = os.path.join("python", rel_src)
             return (rel_src, rel_dest)
 
-        # Remapping of other installed files according to manifest
         if topdir == os.pardir:
-            root: str = os.path.dirname(distribution.path)
+            # Check if rel path exists relative to RECORD file (usually the case).
+            # If so, recalculate relative path against temporary (pip) install root
+            temp_install_root: str = os.path.dirname(distribution.path)
             record_abs_path: str = distribution.get_distinfo_file("RECORD")
-            abs_src: str = os.path.abspath(os.path.join(record_abs_path, rel_src))
-            if os.path.exists(abs_src):
-                rel_to_root = os.path.relpath(abs_src, root)
+            abs_src_path: str = os.path.abspath(os.path.join(record_abs_path, rel_src))
+            if os.path.exists(abs_src_path):
+                rel_to_root = os.path.relpath(abs_src_path, temp_install_root)
                 return rel_to_root, rel_to_root
 
+            # Remapping of other installed files according to manifest
             for remap in config.pip_install_remaps:
                 path = remap['record_path']
                 if re.search(path, rel_src):
@@ -525,7 +527,7 @@ def _get_distribution_files_mapping(distribution: InstalledDistribution, targetd
 
             tokenised_path = rel_src.replace(os.pardir, '{pardir}')
             tokenised_path = tokenised_path.replace(os.sep, '{sep}')
-            dist_record = os.path.relpath(record_abs_path, root)
+            dist_record = os.path.relpath(record_abs_path, temp_install_root)
 
             try_this_message = r"""
             Unknown source file in {0}! '{1}'
