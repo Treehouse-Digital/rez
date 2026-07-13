@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from rez.packages import get_latest_package
 from rez.version import Version
-from rez.vendor.distlib.database import DistributionPath
+from rez.vendor.distlib.database import DistributionPath, InstalledDistribution
 from rez.vendor.packaging.version import Version as PackagingVersion
 from rez.vendor.packaging.specifiers import Specifier
 from rez.resolved_context import ResolvedContext
@@ -484,7 +484,7 @@ def _is_exe(fpath):
     return os.path.exists(fpath) and os.access(fpath, os.X_OK)
 
 
-def _get_distribution_files_mapping(distribution, targetdir):
+def _get_distribution_files_mapping(distribution: InstalledDistribution, targetdir: str):
     """Get remapping of pip installation to rez package installation.
 
     Args:
@@ -509,6 +509,13 @@ def _get_distribution_files_mapping(distribution, targetdir):
 
         # Remapping of other installed files according to manifest
         if topdir == os.pardir:
+            root: str = os.path.dirname(distribution.path)
+            record_abs_path: str = distribution.get_distinfo_file("RECORD")
+            abs_src: str = os.path.abspath(os.path.join(record_abs_path, rel_src))
+            if os.path.exists(abs_src):
+                rel_to_root = os.path.relpath(abs_src, root)
+                return rel_to_root, rel_to_root
+
             for remap in config.pip_install_remaps:
                 path = remap['record_path']
                 if re.search(path, rel_src):
@@ -518,8 +525,7 @@ def _get_distribution_files_mapping(distribution, targetdir):
 
             tokenised_path = rel_src.replace(os.pardir, '{pardir}')
             tokenised_path = tokenised_path.replace(os.sep, '{sep}')
-            dist_record = '{dist.name}-{dist.version}.dist-info{os.sep}RECORD'
-            dist_record = dist_record.format(dist=distribution, os=os)
+            dist_record = os.path.relpath(record_abs_path, root)
 
             try_this_message = r"""
             Unknown source file in {0}! '{1}'
