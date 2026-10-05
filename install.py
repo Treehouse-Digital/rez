@@ -148,7 +148,7 @@ def copy_completion_scripts(dest_dir):
     return None
 
 
-def install(dest_dir, print_welcome=False, editable=False):
+def install(dest_dir, print_welcome=False, editable=False, already_venv=False):
     """Install rez into the given directory.
 
     Args:
@@ -157,7 +157,8 @@ def install(dest_dir, print_welcome=False, editable=False):
     print("installing rez%s to %s..." % (" (editable mode)" if editable else "", dest_dir))
 
     # create the virtualenv
-    create_virtual_environment(dest_dir)
+    if not already_venv:
+        create_virtual_environment(dest_dir)
 
     # install rez from source
     install_rez_from_source(dest_dir, editable=editable)
@@ -286,6 +287,11 @@ if __name__ == "__main__":
         "only (no cli tools), and DIR is expected to be the path to a rez "
         "package repository (and will default to ~/packages instead).")
     parser.add_argument(
+        "--already-venv", action="store_true",
+        help="Assume destination is already a pre-prepared venv i.e. on Linux, it "
+        "already has the bin, lib, etc sub-folder"
+    )
+    parser.add_argument(
         "-e", "--editable", action="store_true",
         help="Make the install an editable install (pip install -e). This should "
         "only be used for development purposes"
@@ -324,4 +330,4 @@ if __name__ == "__main__":
     if opts.as_rez_package:
         install_as_rez_package(dest_dir)
     else:
-        install(dest_dir, print_welcome=True, editable=opts.editable)
+        install(dest_dir, print_welcome=True, editable=opts.editable, already_venv=opts.already_venv)
