@@ -6,8 +6,8 @@
 Entry points.
 """
 import os
-import os.path
 import sys
+from pathlib import Path
 
 
 ### Utility functions
@@ -48,10 +48,9 @@ def scriptname(name):
 
 
 def check_production_install() -> None:
-    path = os.path.dirname(sys.argv[0])
-    filepath = os.path.join(path, ".rez_production_install")
-
-    if not os.path.exists(filepath):
+    # Treehouse - Ensure exe symlink is followed to source before checking
+    src_exe = Path(sys.argv[0]).resolve()
+    if not src_exe.with_name(".rez_production_install").is_file():
         sys.stderr.write(
             "Pip-based rez installation detected. Please be aware that rez command "
             "line tools are not guaranteed to function correctly in this case. See "
